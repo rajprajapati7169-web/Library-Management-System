@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Library Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* ===========================
+       CSS VARIABLES & RESET
+    =========================== */
+    :root {
+      --bg:        #0e0f14;
+      --surface:   #16181f;
+      --card:      #1d2029;
+      --border:    #2a2e3d;
+      --accent:    #e8c96d;
+      --accent2:   #c97b63;
+      --green:     #5ec98e;
+      --red:       #e05c6a;
+      --text:      #e8e9f0;
+      --muted:     #8a8fa8;
+      --radius:    14px;
+      --shadow:    0 8px 32px rgba(0,0,0,.45);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+
+    /* subtle grid texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(232,201,109,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(232,201,109,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===========================
+       HEADER
+    =========================== */
+    header {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(135deg, #1a1c26 0%, #12141c 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo-icon {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: grid; place-items: center;
+      font-size: 24px;
+      box-shadow: 0 4px 20px rgba(232,201,109,.3);
+    }
+    .logo h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.65rem;
+      letter-spacing: .5px;
+      line-height: 1.1;
+    }
+    .logo span { color: var(--accent); }
+
+    /* Stats pills in header */
+    .header-stats {
+      display: flex; gap: 12px; flex-wrap: wrap;
+    }
+    .stat-pill {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: .82rem;
+      display: flex; align-items: center; gap: 6px;
+      color: var(--muted);
+    }
+    .stat-pill strong { color: var(--text); font-size: .95rem; }
+
+    /* ===========================
+       MAIN LAYOUT
+    =========================== */
+    .container {
+      position: relative; z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 36px 20px 0;
+    }
+
+    /* ===========================
+       ADD BOOK CARD
+    =========================== */
+    .add-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 30px;
+      margin-bottom: 28px;
+      box-shadow: var(--shadow);
+    }
+    .add-card h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      margin-bottom: 20px;
+      color: var(--accent);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .form-row {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      align-items: flex-end;
+    }
+    .form-group {
+      flex: 1; min-width: 160px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .form-group label {
+      font-size: .78rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+    }
+    .form-group input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .form-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(232,201,109,.12);
+    }
+    .form-group input::placeholder { color: #444860; }
+
+    /* ===========================
+       BUTTONS
+    =========================== */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 10px 22px;
+      border: none; border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem; font-weight: 600;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s, filter .15s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(.97); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #d4a84a);
+      color: #1a1000;
+      box-shadow: 0 4px 16px rgba(232,201,109,.25);
+    }
+    .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 6px 22px rgba(232,201,109,.35); }
+
+    .btn-issue {
+      background: rgba(94,201,142,.15);
+      color: var(--green);
+      border: 1px solid rgba(94,201,142,.3);
+    }
+    .btn-issue:hover { background: rgba(94,201,142,.25); }
+
+    .btn-return {
+      background: rgba(232,201,109,.12);
+      color: var(--accent);
+      border: 1px solid rgba(232,201,109,.25);
+    }
+    .btn-return:hover { background: rgba(232,201,109,.22); }
+
+    .btn-delete {
+      background: rgba(224,92,106,.12);
+      color: var(--red);
+      border: 1px solid rgba(224,92,106,.25);
+    }
+    .btn-delete:hover { background: rgba(224,92,106,.22); }
+
+    .btn-sm { padding: 6px 13px; font-size: .8rem; border-radius: 6px; }
+
+    /* ===========================
+       TOOLBAR (search + filter)
+    =========================== */
+    .toolbar {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .search-wrap {
+      flex: 1; min-width: 180px;
+      position: relative;
+    }
+    .search-wrap .icon {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted); font-size: 1rem; pointer-events: none;
+    }
+    #searchInput {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px 10px 38px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    #searchInput:focus { border-color: var(--accent); }
+    #searchInput::placeholder { color: #444860; }
+
+    .filter-tabs {
+      display: flex; gap: 6px;
+    }
+    .filter-tab {
+      padding: 8px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .82rem; font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .filter-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #1a1000;
+    }
+    .filter-tab:hover:not(.active) { color: var(--text); border-color: var(--muted); }
+
+    /* ===========================
+       BOOK LIST
+    =========================== */
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      color: var(--muted);
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title span {
+      background: var(--border);
+      border-radius: 100px;
+      font-size: .75rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      padding: 2px 10px;
+      color: var(--muted);
+    }
+
+    #bookList {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    /* Individual book row */
+    .book-row {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex; align-items: center; gap: 16px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 12px rgba(0,0,0,.25);
+      animation: slideIn .25s ease both;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .book-row:hover {
+      border-color: rgba(232,201,109,.2);
+      box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: scale(.96); max-height: 0; padding: 0; margin: 0; }
+    }
+    .book-row.removing {
+      animation: fadeOut .25s ease forwards;
+      overflow: hidden;
+    }
+
+    .book-index {
+      width: 32px; height: 32px;
+      background: var(--surface);
+      border-radius: 8px;
+      display: grid; place-items: center;
+      font-size: .8rem; font-weight: 700;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .book-info { flex: 1; min-width: 150px; }
+    .book-name {
+      font-weight: 600; font-size: .97rem;
+      margin-bottom: 2px;
+    }
+    .book-author {
+      font-size: .8rem; color: var(--muted);
+    }
+
+    .book-id {
+      font-size: .78rem;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-family: monospace;
+      flex-shrink: 0;
+    }
+
+    .status-badge {
+      font-size: .75rem; font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 100px;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .status-available {
+      background: rgba(94,201,142,.15);
+      color: var(--green);
+      border: 1px solid rgba(94,201,142,.3);
+    }
+    .status-issued {
+      background: rgba(201,123,99,.15);
+      color: var(--accent2);
+      border: 1px solid rgba(201,123,99,.3);
+    }
+
+    .issued-by {
+      font-size: .78rem;
+      color: var(--muted);
+      display: flex; align-items: center; gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .book-actions {
+      display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0;
+    }
+
+    /* ===========================
+       EMPTY STATE
+    =========================== */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty-state .big-icon { font-size: 3.5rem; margin-bottom: 12px; }
+    .empty-state p { font-size: .95rem; }
+
+    /* ===========================
+       MODAL (Issue Book)
+    =========================== */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.65);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: none; place-items: center;
+    }
+    .modal-overlay.open { display: grid; }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      width: min(420px, 90vw);
+      box-shadow: var(--shadow);
+      animation: popIn .2s ease both;
+    }
+    @keyframes popIn {
+      from { opacity:0; transform: scale(.93) translateY(8px); }
+      to   { opacity:1; transform: scale(1) translateY(0); }
+    }
+    .modal h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      margin-bottom: 6px;
+    }
+    .modal p { font-size: .85rem; color: var(--muted); margin-bottom: 20px; }
+    .modal .form-group { margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* ===========================
+       TOAST NOTIFICATION
+    =========================== */
+    #toast-container {
+      position: fixed; bottom: 24px; right: 24px;
+      z-index: 200;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .toast {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: .88rem;
+      box-shadow: var(--shadow);
+      display: flex; align-items: center; gap: 10px;
+      animation: toastIn .3s ease both;
+      min-width: 220px;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(30px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes toastOut {
+      to   { opacity: 0; transform: translateX(30px); max-height: 0; padding: 0; margin: 0; }
+    }
+    .toast.hiding { animation: toastOut .3s ease forwards; }
+    .toast-icon { font-size: 1.1rem; }
+
+    /* ===========================
+       RESPONSIVE
+    =========================== */
+    @media (max-width: 600px) {
+      header { padding: 18px 16px; }
+      .logo h1 { font-size: 1.2rem; }
+      .add-card { padding: 20px 16px; }
+      .container { padding: 20px 12px 0; }
+      .book-row { flex-direction: column; align-items: flex-start; }
+      .book-actions { width: 100%; }
+      .book-actions .btn { flex: 1; justify-content: center; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ===================== HEADER ===================== -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📚</div>
+      <h1>Library<br><span>Manager</span></h1>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pill">📦 Total <strong id="statTotal">0</strong></div>
+      <div class="stat-pill">✅ Available <strong id="statAvail">0</strong></div>
+      <div class="stat-pill">📤 Issued <strong id="statIssued">0</strong></div>
+    </div>
+  </header>
+
+  <!-- ===================== MAIN ===================== -->
+  <div class="container">
+
+    <!-- ADD BOOK FORM -->
+    <div class="add-card">
+      <h2>📖 Add New Book</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Book Name</label>
+          <input id="bookName" type="text" placeholder="e.g. The Great Gatsby"/>
+        </div>
+        <div class="form-group">
+          <label>Author</label>
+          <input id="bookAuthor" type="text" placeholder="e.g. F. Scott Fitzgerald"/>
+        </div>
+        <div class="form-group" style="max-width:160px">
+          <label>Book ID</label>
+          <input id="bookId" type="text" placeholder="e.g. BK-001"/>
+        </div>
+        <button class="btn btn-primary" id="addBtn" onclick="addBook()">
+          ＋ Add Book
+        </button>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="icon">🔍</span>
+        <input id="searchInput" type="text" placeholder="Search books, authors, IDs…" oninput="renderBooks()"/>
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setFilter('all', this)">All</button>
+        <button class="filter-tab" onclick="setFilter('available', this)">Available</button>
+        <button class="filter-tab" onclick="setFilter('issued', this)">Issued</button>
+      </div>
+    </div>
+
+    <!-- SECTION TITLE -->
+    <div class="section-title">
+      Library Collection <span id="countBadge">0 books</span>
+    </div>
+
+    <!-- BOOK LIST -->
+    <div id="bookList"></div>
+
+  </div><!-- /.container -->
+
+  <!-- ===================== ISSUE MODAL ===================== -->
+  <div class="modal-overlay" id="issueModal">
+    <div class="modal">
+      <h3>📤 Issue Book</h3>
+      <p id="issueModalSubtitle">Enter the name of the person borrowing this book.</p>
+      <div class="form-group">
+        <label>User Name</label>
+        <input id="issueName" type="text" placeholder="e.g. Rahul Sharma"/>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-delete btn-sm" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmIssue()">Issue Book</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TOAST CONTAINER ===================== -->
+  <div id="toast-container"></div>
+
+  <!-- ===================== JAVASCRIPT ===================== -->
+  <script>
+    /* ============================================================
+       DATA LAYER — localStorage-backed book store
+    ============================================================ */
+
+    /**
+     * Load books array from localStorage, or return empty array.
+     */
+    function loadBooks() {
+      try {
+        return JSON.parse(localStorage.getItem('lms_books')) || [];
+      } catch { return []; }
+    }
+
+    /**
+     * Save books array to localStorage.
+     */
+    function saveBooks(books) {
+      localStorage.setItem('lms_books', JSON.stringify(books));
+    }
+
+    // Global state
+    let books = loadBooks();
+    let currentFilter = 'all';
+    let pendingIssueId = null; // book ID waiting for issue confirmation
+
+    /* ============================================================
+       ADD BOOK
+    ============================================================ */
+    function addBook() {
+      const name   = document.getElementById('bookName').value.trim();
+      const author = document.getElementById('bookAuthor').value.trim();
+      const id     = document.getElementById('bookId').value.trim();
+
+      // Validation
+      if (!name || !author || !id) {
+        showToast('⚠️ Please fill in all fields.', 'warn');
+        return;
+      }
+
+      // Check duplicate ID
+      if (books.find(b => b.id.toLowerCase() === id.toLowerCase())) {
+        showToast('❌ Book ID already exists!', 'error');
+        return;
+      }
+
+      // Create book object
+      const book = {
+        id,
+        name,
+        author,
+        status: 'available', // 'available' | 'issued'
+        issuedTo: null,
+        addedAt: Date.now()
+      };
+
+      books.push(book);
+      saveBooks(books);
+
+      // Clear inputs
+      document.getElementById('bookName').value   = '';
+      document.getElementById('bookAuthor').value = '';
+      document.getElementById('bookId').value     = '';
+
+      renderBooks();
+      showToast(`📚 "${name}" added to library!`, 'success');
+    }
+
+    /* ============================================================
+       DELETE BOOK
+    ============================================================ */
+    function deleteBook(id) {
+      const bookRow = document.getElementById('row-' + id);
+      if (bookRow) {
+        // Animate removal
+        bookRow.classList.add('removing');
+        setTimeout(() => {
+          books = books.filter(b => b.id !== id);
+          saveBooks(books);
+          renderBooks();
+        }, 250);
+      }
+      showToast('🗑️ Book removed.', 'info');
+    }
+
+    /* ============================================================
+       ISSUE BOOK — opens modal
+    ============================================================ */
+    function openIssueModal(id) {
+      const book = books.find(b => b.id === id);
+      if (!book) return;
+
+      pendingIssueId = id;
+      document.getElementById('issueModalSubtitle').textContent =
+        `Issuing: "${book.name}" by ${book.author}`;
+      document.getElementById('issueName').value = '';
+      document.getElementById('issueModal').classList.add('open');
+      document.getElementById('issueName').focus();
+    }
+
+    function closeModal() {
+      pendingIssueId = null;
+      document.getElementById('issueModal').classList.remove('open');
+    }
+
+    function confirmIssue() {
+      const userName = document.getElementById('issueName').value.trim();
+      if (!userName) {
+        showToast('⚠️ Please enter a user name.', 'warn');
+        return;
+      }
+
+      const book = books.find(b => b.id === pendingIssueId);
+      if (book) {
+        book.status   = 'issued';
+        book.issuedTo = userName;
+        saveBooks(books);
+        renderBooks();
+        showToast(`📤 "${book.name}" issued to ${userName}.`, 'success');
+      }
+
+      closeModal();
+    }
+
+    /* ============================================================
+       RETURN BOOK
+    ============================================================ */
+    function returnBook(id) {
+      const book = books.find(b => b.id === id);
+      if (book) {
+        const who = book.issuedTo;
+        book.status   = 'available';
+        book.issuedTo = null;
+        saveBooks(books);
+        renderBooks();
+        showToast(`🔁 "${book.name}" returned by ${who}.`, 'success');
+      }
+    }
+
+    /* ============================================================
+       FILTER & SEARCH
+    ============================================================ */
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+
+      // Update active tab styling
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+
+      renderBooks();
+    }
+
+    function getFilteredBooks() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+
+      return books.filter(book => {
+        // Filter by status
+        if (currentFilter === 'available' && book.status !== 'available') return false;
+        if (currentFilter === 'issued'    && book.status !== 'issued')    return false;
+
+        // Filter by search query
+        if (query) {
+          const haystack = `${book.name} ${book.author} ${book.id}`.toLowerCase();
+          if (!haystack.includes(query)) return false;
+        }
+
+        return true;
+      });
+    }
+
+    /* ============================================================
+       RENDER BOOKS
+    ============================================================ */
+    function renderBooks() {
+      const list    = document.getElementById('bookList');
+      const filtered = getFilteredBooks();
+
+      // Update header stats (based on ALL books, not filtered)
+      document.getElementById('statTotal').textContent  = books.length;
+      document.getElementById('statAvail').textContent  = books.filter(b => b.status === 'available').length;
+      document.getElementById('statIssued').textContent = books.filter(b => b.status === 'issued').length;
+
+      // Update count badge (based on filtered)
+      const badge = document.getElementById('countBadge');
+      badge.textContent = `${filtered.length} book${filtered.length !== 1 ? 's' : ''}`;
+
+      // Empty state
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="big-icon">📭</div>
+            <p>${books.length === 0
+              ? 'No books yet. Add your first book above!'
+              : 'No books match your search or filter.'
+            }</p>
+          </div>`;
+        return;
+      }
+
+      // Build rows
+      list.innerHTML = filtered.map((book, idx) => `
+        <div class="book-row" id="row-${escHtml(book.id)}">
+
+          <!-- Index number -->
+          <div class="book-index">${idx + 1}</div>
+
+          <!-- Book info -->
+          <div class="book-info">
+            <div class="book-name">${escHtml(book.name)}</div>
+            <div class="book-author">✍️ ${escHtml(book.author)}</div>
+          </div>
+
+          <!-- Book ID -->
+          <div class="book-id">${escHtml(book.id)}</div>
+
+          <!-- Status badge -->
+          <div class="status-badge ${book.status === 'available' ? 'status-available' : 'status-issued'}">
+            ${book.status === 'available' ? '✅ Available' : '📤 Issued'}
+          </div>
+
+          <!-- Issued to (if applicable) -->
+          ${book.issuedTo
+            ? `<div class="issued-by">👤 ${escHtml(book.issuedTo)}</div>`
+            : '<div class="issued-by" style="visibility:hidden">–</div>'
+          }
+
+          <!-- Action buttons -->
+          <div class="book-actions">
+            ${book.status === 'available'
+              ? `<button class="btn btn-issue btn-sm" onclick="openIssueModal('${escAttr(book.id)}')">Issue</button>`
+              : `<button class="btn btn-return btn-sm" onclick="returnBook('${escAttr(book.id)}')">Return</button>`
+            }
+            <button class="btn btn-delete btn-sm" onclick="deleteBook('${escAttr(book.id)}')">Delete</button>
+          </div>
+
+        </div>
+      `).join('');
+    }
+
+    /* ============================================================
+       TOAST NOTIFICATIONS
+    ============================================================ */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+
+      // Pick an icon color by type
+      const colors = {
+        success: 'var(--green)',
+        error:   'var(--red)',
+        warn:    'var(--accent)',
+        info:    'var(--muted)'
+      };
+      toast.style.borderLeftColor = colors[type] || colors.info;
+      toast.style.borderLeftWidth = '3px';
+
+      toast.innerHTML = `<span class="toast-icon">${iconFor(type)}</span> ${message}`;
+      container.appendChild(toast);
+
+      // Auto-dismiss after 3 seconds
+      setTimeout(() => {
+        toast.classList.add('hiding');
+        setTimeout(() => toast.remove(), 350);
+      }, 3000);
+    }
+
+    function iconFor(type) {
+      return { success: '✅', error: '❌', warn: '⚠️', info: 'ℹ️' }[type] || 'ℹ️';
+    }
+
+    /* ============================================================
+       HELPERS — prevent XSS when inserting user data into HTML
+    ============================================================ */
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+    function escAttr(str) {
+      return String(str).replace(/'/g, "\\'");
+    }
+
+    /* ============================================================
+       KEYBOARD SHORTCUTS
+    ============================================================ */
+    // Press Enter in any add-form input to add book
+    ['bookName', 'bookAuthor', 'bookId'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') addBook();
+      });
+    });
+
+    // Press Enter in issue modal to confirm
+    document.getElementById('issueName').addEventListener('keydown', e => {
+      if (e.key === 'Enter') confirmIssue();
+    });
+
+    // Press Escape to close modal
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // Click backdrop to close modal
+    document.getElementById('issueModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    /* ============================================================
+       INITIAL RENDER
+    ============================================================ */
+    renderBooks();
+  </script>
+
+</body>
+</html>
